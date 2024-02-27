@@ -1,0 +1,44 @@
+@startuml Social_network_context_entities
+entity "Пользователь" as user {
+    * id: number <<generated>>
+    --
+    * name: text
+    * surname: text
+    * dateOfBirth: text
+    * status: text
+    * authToken: text
+}
+
+entity "Пост" as post {
+    * id: number <<generated>>
+    --
+    * authorId: number <<FK>>
+    * content: text
+}
+
+entity "Комментарий" as comment {
+    * id: number <<generated>>
+    --
+    * authorId: number <<FK>>
+    * attachedToId: number <<FK>>
+    * content: text
+}
+
+entity "Статистика" as statistics {
+    * id: number <<generated>>
+    --
+    * entityId: number <<FK>>
+    * dateCreated: timestamp
+    * likesCount: number
+    * viewsCount: number
+    * commentsCount: number
+}
+
+user ||..o{ post
+user ||..o{ comment
+post ||..o{ comment
+post ||..|| statistics
+comment ||..|| statistics
+
+
+@enduml
