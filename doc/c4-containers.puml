@@ -13,6 +13,8 @@ Container(frontend, "Фронтенд", "", "Удобный пользовате
 Container(main_service, "Главный сервис", "Python", "Ответсвенен за обработку запросов пользователей, а также за регистрацию и аунтификацию", $sprite="python")
 Container(statistics_service, "Сервис статистики", "Python", "Считает и хранит статистику лайков и просмотров", $sprite="python")
 Container(content_service, "Сервис постов и комментариев", "Python", "Хранит посты и комментарии", $sprite="python")
+
+ContainerDb(main_service_db, "main_service_db", "Postgres", "Хранит данные пользователей", $sprite="postgresql")
 ContainerDb(statistics_db, "statistics_db", "Clickhouse", "Хранит статистику лайков и просмотров")
 ContainerDb(content_db, "content_db", "Postgres", "Хранит посты и комментарии", $sprite="postgresql")
 ContainerQueue(statistics_queue, "statistics_queue", "Kafka", "Очередь сообщений в сервис статистики")
@@ -22,6 +24,7 @@ Rel(frontend, main_service, "Транслирует запросы пользо�
 Rel(main_service, statistics_service, "Сбор статистики", "gRPC")
 Rel(main_service, content_service, "Работа с постами и комментарии", "gRPC")
 
+Rel(main_service, main_service_db, "Сохраняет данные пользователей")
 Rel(statistics_service, statistics_db, "Сохраняет статистику")
 Rel(content_service, content_db, "Сохраняет посты и комментарии")
 Rel(main_service, statistics_queue, "Кладет сообщение со статистикой в очередь")
