@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 # SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
+    NotFound,
     Unauthorized,
     Conflict,
     Forbidden,
@@ -21,6 +22,7 @@ from generated import post_service_pb2_grpc
 import os
 import jwt
 import hashlib
+import sys
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -161,19 +163,24 @@ def update_post():
     post_id = data.get('post_id')
     content = data.get('content')
 
-    grpc_request = post_service_pb2.UpdatePostRequest(
-        user_id=user_id,
-        post_id=post_id,
-        content=content
-    )
-    response = post_service_stub.UpdatePost(grpc_request)
-    if response.success:
+    try:
+        grpc_request = post_service_pb2.UpdatePostRequest(
+            user_id=user_id,
+            post_id=post_id,
+            content=content
+        )
+        response = post_service_stub.UpdatePost(grpc_request)
         return jsonify({
             'message': 'Post updated successfully!'
         })
-    else:
-        # TODO: get error from grpc
-        raise InternalServerError('Failed to update post')
+    except grpc.RpcError as e:
+        status_code = e.code()
+        error_message = e.details()
+        if status_code == grpc.StatusCode.NOT_FOUND:
+            raise NotFound(error_message)
+        elif status_code == grpc.StatusCode.PERMISSION_DENIED:
+            raise Forbidden(error_message)
+        raise InternalServerError()
 
 
 @app.route('/delete-post', methods=['PUT'])
@@ -182,18 +189,24 @@ def delete_post():
     user_id = decode_jwt(data.get('auth_token'))
     post_id = data.get('post_id')
 
-    grpc_request = post_service_pb2.DeletePostRequest(
-        user_id=user_id,
-        post_id=post_id,
-    )
-    response = post_service_stub.UpdatePost(grpc_request)
-    if response.success:
-        return jsonify({
-            'message': 'Post deleted successfully!'
-        })
-    else:
-        # TODO: get error from grpc
-        raise InternalServerError('Failed to delete post')
+    try:
+        grpc_request = post_service_pb2.DeletePostRequest(
+            user_id=user_id,
+            post_id=post_id,
+        )
+        response = post_service_stub.UpdatePost(grpc_request)
+        if response.success:
+            return jsonify({
+                'message': 'Post deleted successfully!'
+            })
+    except grpc.RpcError as e:
+        status_code = e.code()
+        error_message = e.details()
+        if status_code == grpc.StatusCode.NOT_FOUND:
+            raise NotFound(error_message)
+        elif status_code == grpc.StatusCode.PERMISSION_DENIED:
+            raise Forbidden(error_message)
+        raise InternalServerError()
 
 
 @app.route('/get-post', methods=['PUT'])
@@ -202,17 +215,25 @@ def get_post():
     user_id = decode_jwt(data.get('auth_token'))
     post_id = data.get('post_id')
 
-    grpc_request = post_service_pb2.GetPostByIdRequest(
-        user_id=user_id,
-        post_id=post_id,
-    )
-    response = post_service_stub.GetPostById(grpc_request)
+    try:
+        grpc_request = post_service_pb2.GetPostByIdRequest(
+            user_id=user_id,
+            post_id=post_id,
+        )
+        response = post_service_stub.GetPostById(grpc_request)
 
-    # TODO: check error from grpc
-    return jsonify({
-        'author': response.author_id,
-        'content': response.content,
-    })
+        return jsonify({
+            'author': response.author_id,
+            'content': response.content,
+        })
+    except grpc.RpcError as e:
+        status_code = e.code()
+        error_message = e.details()
+        if status_code == grpc.StatusCode.NOT_FOUND:
+            raise NotFound(error_message)
+        elif status_code == grpc.StatusCode.PERMISSION_DENIED:
+            raise Forbidden(error_message)
+        raise InternalServerError()
 
 
 @app.route('/get-posts', methods=['PUT'])
