@@ -1,12 +1,9 @@
 FROM python:3.9-slim
 
-ENV FLASK_APP=main-service.py
-ENV FLASK_RUN_HOST=0.0.0.0
-
-WORKDIR /main-service
+WORKDIR /post-service
 
 # Download dependencies
-COPY main-service/requirements.txt .
+COPY post-service/requirements.txt .
 RUN pip install -r requirements.txt
 
 # Setup protofiles
@@ -17,9 +14,5 @@ RUN chmod +x compile-proto.sh
 RUN ./compile-proto.sh
 
 # Run service
-COPY main-service/main-service.py .
-COPY main-service/run.sh .
-COPY main-service/keys keys/.
-RUN chmod +x run.sh
-
-CMD ["sh", "run.sh"]
+COPY post-service/post-service.py .
+CMD ["python3", "post-service.py"]

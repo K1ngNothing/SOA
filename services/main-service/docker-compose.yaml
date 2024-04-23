@@ -6,12 +6,14 @@ services:
       POSTGRES_DB: users
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
 
   main-service:
     container_name: main-service
-    build: .
+    build:
+      context: ../
+      dockerfile: ./main-service/dockerfile
     depends_on:
       - main-service-db
     ports:
@@ -20,3 +22,4 @@ services:
       DATABASE_URL: "postgresql://admin:admin@main-service-db:5432/users"
       PRIVATE_KEY_PATH: "keys/signature.pem"
       PUBLIC_KEY_PATH: "keys/signature.pub"
+      POST_SERVICE_ADDR: post-service:5001

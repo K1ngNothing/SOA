@@ -6,3 +6,6 @@ psycopg2-binary
 Flask-Migrate
 pyjwt
 cryptography
+grpcio-tools
+protoletariat
+protobuf
