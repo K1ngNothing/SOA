@@ -1,7 +1,9 @@
 openapi: 3.0.0
+
 info:
   title: Main Service API
   version: 1.0.0
+
 paths:
   /register:
     post:
@@ -11,34 +13,21 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-              required:
-                - username
-                - password
+              $ref: '#/components/schemas/User'
       responses:
         '200':
           description: User has been registered successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '409':
           description: User already exists
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
+
 
   /login:
     post:
@@ -48,18 +37,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                password:
-                  type: string
-              required:
-                - username
-                - password
+              $ref: '#/components/schemas/User'
       responses:
         '200':
-          description: Authentication successful! Token is granted
+          description: Authentication successful, token is granted
           content:
             application/json:
               schema:
@@ -67,21 +48,19 @@ paths:
                 properties:
                   auth_token:
                     type: string
-                  message:
-                    type: string
         '403':
           description: Invalid username or password
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
+
 
   /update-user-info:
     put:
       summary: Updates user's personal information
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -89,8 +68,6 @@ paths:
             schema:
               type: object
               properties:
-                auth_token:
-                  type: string
                 first_name:
                   type: string
                 last_name:
@@ -109,54 +86,38 @@ paths:
                 - date_of_birth
                 - email
                 - phone_number
-                - auth_token
       responses:
         '200':
           description: User's personal info successfully updated
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '401':
           description: Authentication failed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '403':
           description: Invalid user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
 
 
   /create-post:
     post:
       summary: Create a post
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                auth_token:
-                  type: string
-                content:
-                  type: string
-              required:
-                - auth_token
-                - content
+              $ref: '#/components/schemas/Content'
       responses:
         '200':
           description: Post created successfully!
@@ -174,174 +135,116 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
+
 
   /update-post:
     put:
       summary: Update a post
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                auth_token:
-                  type: string
-                post_id:
-                  type: integer
-                content:
-                  type: string
-              required:
-                - auth_token
-                - post_id
-                - content
+              $ref: '#/components/schemas/Content'
+
       responses:
         '200':
           description: Post updated successfully!
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '401':
           description: Authentication failed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '403':
           description: Invalid user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
 
-                    
+
   /delete-post:
-    put:
+    delete:
       summary: Delete a post
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                auth_token:
-                  type: string
-                post_id:
-                  type: integer
-              required:
-                - auth_token
-                - post_id
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
       responses:
         '200':
           description: Post deleted successfully!
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '401':
           description: Authentication failed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '403':
           description: Invalid user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
 
 
   /get-post:
-    put:
+    get:
       summary: Get a post by id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                auth_token:
-                  type: string
-                post_id:
-                  type: integer
-              required:
-                - auth_token
-                - post_id
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
       responses:
         '200':
           description: Post retreived
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  authour:
-                    type: string
-                  content:
-                    type: string
-                  time_created:
-                    type: string
-                  last_updated:
-                    type: string
+                $ref: '#/components/schemas/Post'
         '401':
           description: Authentication failed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '403':
           description: Invalid user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    
+                $ref: '#/components/schemas/Post'
+
+
   /get-posts:
-    put:
+    get:
       summary: Get posts
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                auth_token:
-                  type: string
-              required:
-                - auth_token
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: starting-post
+          required: true
+          schema:
+            type: integer
+        - in: header
+          name: want-to-read
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
           description: A list of posts
@@ -353,20 +256,7 @@ paths:
                   posts:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        post_id:
-                          type: integer
-                        author:
-                          type: integer
-                        content:
-                          type: string
-                        time_created:
-                          type: string
-                          format: date-time
-                        last_updated:
-                          type: string
-                          format: date-time
+                      $ref: '#/components/schemas/Post'
                   message:
                     type: string
         '401':
@@ -374,19 +264,65 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
         '403':
           description: Invalid user
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
+
+components:
+  parameters:
+    PostId:
+      in: header
+      name: post-id
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    Content:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+    Post:
+      type: object
+      properties:
+        post_id:
+          type: integer
+        author:
+          type: integer
+        content:
+          type: string
+      required:
+        - post_id
+        - author
+        - content
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
 servers:
   - url: http://localhost:5000/
