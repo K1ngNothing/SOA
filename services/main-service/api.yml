@@ -1,0 +1,393 @@
+openapi: 3.0.0
+info:
+  title: Main Service API
+  version: 1.0.0
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: User has been registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /login:
+    post:
+      summary: Authenticate a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+              required:
+                - username
+                - password
+      responses:
+        '200':
+          description: Authentication successful! Token is granted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_token:
+                    type: string
+                  message:
+                    type: string
+        '403':
+          description: Invalid username or password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /update-user-info:
+    put:
+      summary: Updates user's personal information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                date_of_birth:
+                  type: string
+                  format: date
+                email:
+                  type: string
+                  format: email
+                phone_number:
+                  type: string
+              required:
+                - first_name
+                - last_name
+                - date_of_birth
+                - email
+                - phone_number
+                - auth_token
+      responses:
+        '200':
+          description: User's personal info successfully updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Invalid user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+
+  /create-post:
+    post:
+      summary: Create a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+                content:
+                  type: string
+              required:
+                - auth_token
+                - content
+      responses:
+        '200':
+          description: Post created successfully!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  post_id:
+                    type: string
+                  message:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /update-post:
+    put:
+      summary: Update a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+                post_id:
+                  type: integer
+                content:
+                  type: string
+              required:
+                - auth_token
+                - post_id
+                - content
+      responses:
+        '200':
+          description: Post updated successfully!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Invalid user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+                    
+  /delete-post:
+    put:
+      summary: Delete a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+                post_id:
+                  type: integer
+              required:
+                - auth_token
+                - post_id
+      responses:
+        '200':
+          description: Post deleted successfully!
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Invalid user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+
+  /get-post:
+    put:
+      summary: Get a post by id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+                post_id:
+                  type: integer
+              required:
+                - auth_token
+                - post_id
+      responses:
+        '200':
+          description: Post retreived
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authour:
+                    type: string
+                  content:
+                    type: string
+                  time_created:
+                    type: string
+                  last_updated:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Invalid user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    
+  /get-posts:
+    put:
+      summary: Get posts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                auth_token:
+                  type: string
+              required:
+                - auth_token
+      responses:
+        '200':
+          description: A list of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        post_id:
+                          type: integer
+                        author:
+                          type: integer
+                        content:
+                          type: string
+                        time_created:
+                          type: string
+                          format: date-time
+                        last_updated:
+                          type: string
+                          format: date-time
+                  message:
+                    type: string
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Invalid user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+servers:
+  - url: http://localhost:5000/
+    variables: {}

@@ -1,0 +1,7 @@
+grpcio
+googleapis-common-protos
+sqlalchemy
+psycopg2-binary
+grpcio-tools 
+protobuf
+protoletariat
