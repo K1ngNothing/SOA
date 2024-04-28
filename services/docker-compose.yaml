@@ -1,0 +1,91 @@
+services:
+  main-service:
+    container_name: main-service
+    build:
+      context: .
+      dockerfile: ./main-service/dockerfile
+    depends_on:
+      - main-service-db
+      - post-service
+      - kafka
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: "postgresql://admin:admin@main-service-db:5432/users"
+      PRIVATE_KEY_PATH: "keys/signature.pem"
+      PUBLIC_KEY_PATH: "keys/signature.pub"
+      POST_SERVICE_ADDR: post-service:5001
+    # restart: on-failure
+
+  post-service:
+    container_name: post-service
+    build: 
+      context: .
+      dockerfile: ./post-service/dockerfile
+    depends_on:
+      - post-service-db
+    environment:
+      DATABASE_URL: "postgresql://admin:admin@post-service-db:5433/posts"
+      POST_SERVICE_PORT: 5001
+    expose:
+      - "5001"
+    # restart: on-failure
+
+  stat-service:
+    container_name: stat-service
+    build: 
+      context: ./stat-service
+      dockerfile: ./dockerfile
+    depends_on:
+      - stat-service-db
+      - kafka
+    # restart: on-failure
+
+  # DB
+
+  main-service-db:
+    container_name: main-service-db
+    image: postgres
+    environment:
+      POSTGRES_DB: users
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    expose:
+      - "5432"
+
+  post-service-db:
+    container_name: post-service-db
+    image: postgres
+    environment:
+      POSTGRES_DB: posts
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    expose:
+      - "5433"
+    command: -p 5433
+
+  stat-service-db:
+    image: yandex/clickhouse-server:latest
+    expose:
+      - "9000"
+    ports:
+      - "8123:8123"
+
+  # Misc
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    expose:
+      - "2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: "kafka"
+      KAFKA_ADVERTISED_PORT: "9092"
+      KAFKA_CREATE_TOPICS: "events:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"

@@ -43,6 +43,12 @@ def CheckPostFound(request,
         context.set_code(grpc.StatusCode.NOT_FOUND)
         context.set_details("Post not found")
         return False
+    return True
+
+
+def CheckAuthor(request,
+                post,
+                context: grpc.ServicerContext):
     if post.author_id != request.user_id:
         context.set_code(grpc.StatusCode.PERMISSION_DENIED)
         context.set_details("Post was not created by this user")
@@ -70,7 +76,7 @@ class PostService(PostServiceServicer):
             post = session.query(Post).filter_by(
                 id=request.post_id).first()
 
-            if not CheckPostFound(request, post, context):
+            if not CheckPostFound(request, post, context) or not CheckAuthor(request, post, context):
                 return StatusResponse(success=False)
 
             post.content = request.content
@@ -83,7 +89,7 @@ class PostService(PostServiceServicer):
         with Session() as session:
             post = session.query(Post).get(request.post_id)
 
-            if not CheckPostFound(request, post, context):
+            if not CheckPostFound(request, post, context) or not CheckAuthor(request, post, context):
                 return StatusResponse(success=False)
 
             session.delete(post)
