@@ -19,12 +19,17 @@ import grpc
 from generated import post_service_pb2
 from generated import post_service_pb2_grpc
 
+# kafka
+from kafka import KafkaProducer
+import json
+
 # Misc
 import os
 import jwt
 import hashlib
 import sys
 from datetime import datetime, timedelta
+import time
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -34,8 +39,14 @@ private_key = ""
 public_key = ""
 token_ttl_hours = 1
 
+# setup kafka
+kafka_producer = KafkaProducer(bootstrap_servers='kafka:9092',
+                               value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+
 
 # DB
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
@@ -104,7 +115,7 @@ def get_header(request, header: str):
 
 
 def get_post_id(request):
-    return get_header(request, 'post_id')
+    return int(get_header(request, 'post_id'))
 
 
 # ----- Routes -----
@@ -225,12 +236,10 @@ def delete_post():
 
 @app.route('/get-post', methods=['GET'])
 def get_post():
-    user_id = decode_jwt(request.headers.get('Authorization'))
     post_id = get_post_id(request)
 
     try:
         grpc_request = post_service_pb2.GetPostByIdRequest(
-            user_id=user_id,
             post_id=post_id,
         )
         response = post_service_stub.GetPostById(grpc_request)
@@ -251,7 +260,7 @@ def get_post():
 
 @app.route('/get-posts', methods=['GET'])
 def get_posts():
-    user_id = decode_jwt(request.headers.get('Authorization'))
+    user_id = int(get_header(request, 'user-id'))
     posts_read = int(get_header(request, 'starting-post'))
     k_page_size = int(get_header(request, 'want-to-read'))
     posts = []
@@ -270,6 +279,30 @@ def get_posts():
         })
 
     return {'posts': posts}
+
+
+@app.route('/view-post', methods=['PUT'])
+def view_post():
+    user_id = decode_jwt(request.headers.get('Authorization'))
+    post_id = int(get_header(request, 'post-id'))
+    kafka_producer.send('events', value={
+        "event": "view",
+        "user_id": int(user_id),
+        "post_id": int(post_id),
+    })
+    return {}
+
+
+@app.route('/like-post', methods=['PUT'])
+def like_post():
+    user_id = decode_jwt(request.headers.get('Authorization'))
+    post_id = int(get_header(request, 'post-id'))
+    kafka_producer.send('events', value={
+        "event": "like",
+        "user_id": int(user_id),
+        "post_id": int(post_id),
+    })
+    return {}
 
 
 def serve():
