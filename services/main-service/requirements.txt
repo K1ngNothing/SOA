@@ -9,3 +9,5 @@ cryptography
 grpcio-tools
 protoletariat
 protobuf
+clickhouse-driver
+kafka-python

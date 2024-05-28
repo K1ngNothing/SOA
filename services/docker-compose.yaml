@@ -15,7 +15,6 @@ services:
       PRIVATE_KEY_PATH: "keys/signature.pem"
       PUBLIC_KEY_PATH: "keys/signature.pub"
       POST_SERVICE_ADDR: post-service:5001
-    # restart: on-failure
 
   post-service:
     container_name: post-service
@@ -29,7 +28,7 @@ services:
       POST_SERVICE_PORT: 5001
     expose:
       - "5001"
-    # restart: on-failure
+    restart: on-failure
 
   stat-service:
     container_name: stat-service
@@ -39,7 +38,7 @@ services:
     depends_on:
       - stat-service-db
       - kafka
-    # restart: on-failure
+    restart: on-failure
 
   # DB
 

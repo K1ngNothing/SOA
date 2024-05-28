@@ -44,9 +44,6 @@ kafka_producer = KafkaProducer(bootstrap_servers='kafka:9092',
                                value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
 
-# DB
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
@@ -87,6 +84,11 @@ def hash_password(username, password):
 
 
 # Start server
+def create_tables():
+    with app.app_context():
+        db.create_all()
+
+
 def load_keys():
     global private_key, public_key
     private_key_path = os.environ.get('PRIVATE_KEY_PATH')
@@ -103,6 +105,15 @@ def setup_post_service():
     post_service_addr = os.environ.get('POST_SERVICE_ADDR')
     channel = grpc.insecure_channel(post_service_addr)
     post_service_stub = post_service_pb2_grpc.PostServiceStub(channel)
+
+
+def serve():
+    create_tables()
+    load_keys()
+    setup_post_service()
+    if __name__ == "__main__":
+        app.run()
+
 
 # ----- Helpers -----
 
@@ -303,13 +314,6 @@ def like_post():
         "post_id": int(post_id),
     })
     return {}
-
-
-def serve():
-    load_keys()
-    setup_post_service()
-    if __name__ == "__main__":
-        app.run()
 
 
 # no __name__ == "__main__" d.t. Flask shenanigans

@@ -1,3 +1,0 @@
-clickhouse-driver
-kafka-python
-

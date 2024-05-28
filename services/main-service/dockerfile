@@ -16,10 +16,6 @@ COPY proto/compile-proto.sh .
 RUN chmod +x compile-proto.sh
 RUN ./compile-proto.sh
 
-# Crutch for saving internet kekw (TODO: remove)
-COPY main-service/requirements2.txt .
-RUN pip install -r requirements2.txt
-
 # Run service
 COPY main-service/main-service.py .
 COPY main-service/run.sh .
