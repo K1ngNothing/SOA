@@ -18,6 +18,8 @@ from flask_migrate import Migrate
 import grpc
 from generated import post_service_pb2
 from generated import post_service_pb2_grpc
+from generated import stat_service_pb2
+from generated import stat_service_pb2_grpc
 
 # kafka
 from kafka import KafkaProducer
@@ -107,10 +109,18 @@ def setup_post_service():
     post_service_stub = post_service_pb2_grpc.PostServiceStub(channel)
 
 
+def setup_stat_service():
+    global stat_service_stub
+    stat_service_addr = os.environ.get('STAT_SERVICE_ADDR')
+    channel = grpc.insecure_channel(stat_service_addr)
+    stat_service_stub = stat_service_pb2_grpc.StatServiceStub(channel)
+
+
 def serve():
     create_tables()
     load_keys()
     setup_post_service()
+    setup_stat_service()
     if __name__ == "__main__":
         app.run()
 
@@ -313,8 +323,38 @@ def like_post():
         "user_id": int(user_id),
         "post_id": int(post_id),
     })
-    return {}
+    return {'message': 'Post like event sent to Kafka'}
 
 
-# no __name__ == "__main__" d.t. Flask shenanigans
+@app.route('/post-stats', methods=['GET'])
+def get_post_stats():
+    post_id = int(get_header(request, 'post-id'))
+    grpc_request = stat_service_pb2.GetPostStatsRequest(post_id=post_id)
+    grpc_response = stat_service_stub.GetPostStats(grpc_request)
+    return {
+        'post_id': grpc_response.post_id,
+        'views': grpc_response.views,
+        'likes': grpc_response.likes
+    }
+
+
+@app.route('/top-posts', methods=['GET'])
+def get_top_posts():
+    sort_by = request.args.get('sort_by', 'likes')
+    grpc_request = stat_service_pb2.GetTopPostsRequest(sort_by=sort_by)
+    grpc_response = stat_service_stub.GetTopPosts(grpc_request)
+    posts = [{'post_id': post.post_id, 'count': post.count}
+             for post in grpc_response.posts]
+    return {'posts': posts}
+
+
+@app.route('/top-users', methods=['GET'])
+def get_top_users():
+    grpc_request = stat_service_pb2.GetTopUsersRequest()
+    grpc_response = stat_service_stub.GetTopUsers(grpc_request)
+    users = [{'user_id': user.user_id, 'likes_count': user.likes_count}
+             for user in grpc_response.users]
+    return {'users': users}
+
+
 serve()

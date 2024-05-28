@@ -15,6 +15,7 @@ services:
       PRIVATE_KEY_PATH: "keys/signature.pem"
       PUBLIC_KEY_PATH: "keys/signature.pub"
       POST_SERVICE_ADDR: post-service:5001
+      STAT_SERVICE_ADDR: stat-service:5002
 
   post-service:
     container_name: post-service
@@ -33,11 +34,15 @@ services:
   stat-service:
     container_name: stat-service
     build: 
-      context: ./stat-service
-      dockerfile: ./dockerfile
+      context: .
+      dockerfile: ./stat-service/dockerfile
     depends_on:
       - stat-service-db
       - kafka
+    environment:
+      STAT_SERVICE_PORT: 5002
+    expose:
+      - "5002"
     restart: on-failure
 
   # DB
