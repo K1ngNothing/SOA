@@ -14,6 +14,10 @@ import time
 import sys
 import os
 
+print("sleeping", file=sys.stderr)
+time.sleep(10)
+
+
 # setup clickhouse
 client = Client(host='stat-service-db', port='9000')
 client.execute(
@@ -32,7 +36,7 @@ class StatService(StatServiceServicer):
         views_count = self.client.execute(
             f'SELECT count() FROM views WHERE post_id = {post_id}')[0][0]
         likes_count = self.client.execute(
-            f'SELECT count() FROM likes WHERE post_id = {post_id}')[0][0]
+            f'SELECT count() FROM likes WHERE post_id = {post_id}')[0][0] - 1
         return GetPostStatsResponse(post_id=post_id, views=views_count, likes=likes_count)
 
     def GetTopPosts(self, request, context):
@@ -43,10 +47,13 @@ class StatService(StatServiceServicer):
             query = 'SELECT post_id, count() as count FROM likes GROUP BY post_id ORDER BY count DESC LIMIT 5'
 
         rows = self.client.execute(query)
+        print(f"Query result: {rows}", file=sys.stderr)
         posts = []
         for row in rows:
             post_id = row[0]
             count = row[1]
+            if sort_by == "likes":
+                count -= 1
             posts.append(PostInfo(post_id=post_id, count=count))
 
         return GetTopPostsResponse(posts=posts)
@@ -57,7 +64,7 @@ class StatService(StatServiceServicer):
         users = []
         for row in rows:
             user_id = row[0]
-            likes_count = row[1]
+            likes_count = row[1] - 1
             users.append(UserInfo(user_id=user_id, likes_count=likes_count))
 
         return GetTopUsersResponse(users=users)
@@ -67,7 +74,7 @@ def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_StatServiceServicer_to_server(StatService(), server)
     port = os.environ["STAT_SERVICE_PORT"]
-    server.add_insecure_port(f"[::]:{port}")
+    server.add_insecure_port(f"0.0.0.0:{port}")
     server.start()
     server.wait_for_termination()
 
@@ -94,7 +101,12 @@ def consume_kafka():
 
 
 if __name__ == "__main__":
-    time.sleep(10)
-    # threading.Thread(target=serve_grpc).start()
-    # threading.Thread(target=consume_kafka).start()
-    serve_grpc()  # DEBUG
+    grpc_thread = threading.Thread(target=serve_grpc)
+    kafka_thread = threading.Thread(target=consume_kafka)
+
+    grpc_thread.start()
+    kafka_thread.start()
+
+    grpc_thread.join()
+    kafka_thread.join()
+    # serve_grpc()  # DEBUG

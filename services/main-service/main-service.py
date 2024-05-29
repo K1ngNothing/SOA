@@ -42,6 +42,8 @@ public_key = ""
 token_ttl_hours = 1
 
 # setup kafka
+# print("sleeping", file=sys.stderr)
+# time.sleep(10)
 kafka_producer = KafkaProducer(bootstrap_servers='kafka:9092',
                                value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
@@ -139,6 +141,21 @@ def get_post_id(request):
     return int(get_header(request, 'post_id'))
 
 
+def get_author_username_by_post_id(post_id):
+    # request post service for author_id
+    post_service_req = post_service_pb2.GetPostByIdRequest(
+        post_id=post_id
+    )
+    post_service_resp = post_service_stub.GetPostById(
+        post_service_req
+    )
+    author_id = post_service_resp.author_id
+
+    # get username from User's database
+    user = User.query.filter_by(id=author_id).first()
+    return user.username
+
+
 # ----- Routes -----
 
 
@@ -200,6 +217,19 @@ def create_post():
     grpc_request = post_service_pb2.CreatePostRequest(
         author_id=user_id, content=content)
     response = post_service_stub.CreatePost(grpc_request)
+
+    # add post to stat-service
+    kafka_producer.send('events', value={
+        "event": "view",
+        "user_id": int(user_id),
+        "post_id": int(response.post_id),
+    })
+    # this 1 like will be subtracted from stat-service result
+    kafka_producer.send('events', value={
+        "event": "like",
+        "user_id": int(user_id),
+        "post_id": int(response.post_id),
+    })
 
     return {
         'post_id': response.post_id,
@@ -340,21 +370,49 @@ def get_post_stats():
 
 @app.route('/top-posts', methods=['GET'])
 def get_top_posts():
-    sort_by = request.args.get('sort_by', 'likes')
-    grpc_request = stat_service_pb2.GetTopPostsRequest(sort_by=sort_by)
-    grpc_response = stat_service_stub.GetTopPosts(grpc_request)
-    posts = [{'post_id': post.post_id, 'count': post.count}
-             for post in grpc_response.posts]
-    return {'posts': posts}
+    sort_by = get_header(request, 'sort-by')
+    print(f"sort-by: {sort_by}", file=sys.stderr)
+    if sort_by != "likes" and sort_by != "views":
+        raise BadRequest(
+            'Invalid header sort_by: should be either "likes" or "views"')
+
+    stat_service_req = stat_service_pb2.GetTopPostsRequest(sort_by=sort_by)
+    stat_service_resp = stat_service_stub.GetTopPosts(stat_service_req)
+
+    result = []
+    for post in stat_service_resp.posts:
+        username = get_author_username_by_post_id(post.post_id)
+        result.append({
+            'post_id': post.post_id,
+            'author_username': username,
+            'count': post.count
+        })
+    return {'top_posts': result}
 
 
 @app.route('/top-users', methods=['GET'])
 def get_top_users():
-    grpc_request = stat_service_pb2.GetTopUsersRequest()
-    grpc_response = stat_service_stub.GetTopUsers(grpc_request)
-    users = [{'user_id': user.user_id, 'likes_count': user.likes_count}
-             for user in grpc_response.users]
-    return {'users': users}
+    stat_service_req = stat_service_pb2.GetTopUsersRequest()
+    stat_service_resp = stat_service_stub.GetTopUsers(stat_service_req)
+    users = stat_service_resp.users
+
+    if len(users) < 3:
+        user_ids = [user.user_id for user in users]
+        additional_users = User.query.filter(
+            User.id.notin_(user_ids)).limit(3 - len(users)).all()
+        for user in additional_users:
+            users.append(stat_service_pb2.UserInfo(
+                user_id=user.id, likes_count=0))
+
+    result = []
+
+    for user in users:
+        user_entity = User.query.filter_by(id=user.user_id).first()
+        result.append({
+            'username': user_entity.username,
+            'likes_count': user.likes_count
+        })
+    return {'top_users': result}
 
 
 serve()
