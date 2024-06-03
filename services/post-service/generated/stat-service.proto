@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+service StatService {
+    rpc GetPostStats (GetPostStatsRequest) returns (GetPostStatsResponse);
+    rpc GetTopPosts (GetTopPostsRequest) returns (GetTopPostsResponse);
+    rpc GetTopUsers (GetTopUsersRequest) returns (GetTopUsersResponse);
+}
+
+// ----- Requests -----
+
+message GetPostStatsRequest {
+    uint64 post_id = 1;
+}
+
+message GetTopPostsRequest {
+    string sort_by = 1; // "likes" or "views"
+}
+
+message GetTopUsersRequest {}
+
+// ----- Responses -----
+
+message GetPostStatsResponse {
+    uint64 post_id = 1;
+    uint64 views = 2;
+    uint64 likes = 3;
+}
+
+message PostInfo {
+    uint64 post_id = 1;
+    uint64 count = 2; // number of likes or views based on sort_by
+}
+
+message GetTopPostsResponse {
+    repeated PostInfo posts = 1;
+}
+
+message UserInfo {
+    uint64 user_id = 1;
+    uint64 likes_count = 2;
+}
+
+message GetTopUsersResponse {
+    repeated UserInfo users = 1;
+}

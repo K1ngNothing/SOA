@@ -29,7 +29,6 @@ message DeletePostRequest {
 }
 
 message GetPostByIdRequest {
-    uint32 user_id = 1;
     uint32 post_id = 2;
 }
 

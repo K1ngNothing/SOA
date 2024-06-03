@@ -121,8 +121,12 @@ class PostService(PostServiceServicer):
         want_to_read = request.want_to_read
 
         with Session() as session:
-            posts = session.query(Post).filter_by(author_id=user_id).filter(
-                Post.content != "").offset(posts_read).limit(want_to_read).all()
+            if user_id != -1:
+                posts = session.query(Post).filter_by(author_id=user_id).filter(
+                    Post.content != "").offset(posts_read).limit(want_to_read).all()
+            else:
+                posts = session.query(Post).filter(
+                    Post.content != "").offset(posts_read).limit(want_to_read).all()
 
             return GetPostsResponse(
                 posts=[

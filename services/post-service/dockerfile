@@ -9,6 +9,7 @@ RUN pip install -r requirements.txt
 # Setup protofiles
 RUN apt-get update && apt-get install -y protobuf-compiler
 COPY proto/post-service.proto .
+COPY proto/stat-service.proto .
 COPY proto/compile-proto.sh .
 RUN chmod +x compile-proto.sh
 RUN ./compile-proto.sh
